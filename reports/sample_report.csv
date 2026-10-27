@@ -1,0 +1,6 @@
+record_type,key,value,source_ip,window,count,severity,reason
+metric,total,8,,,,
+metric,valid,7,,,,
+metric,invalid,1,,,,
+metric,duration_seconds,0,,,,
+metric,throughput_lines_per_second,0,,,,

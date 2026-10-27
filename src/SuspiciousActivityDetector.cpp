@@ -1,0 +1,12 @@
+#include "SuspiciousActivityDetector.hpp"
+#include <algorithm>
+#include <map>
+namespace multilog {
+std::vector<Alert> SuspiciousActivityDetector::detect(const AnalysisResult& r,const DetectionConfig& c) const {
+ std::map<std::string,std::vector<const LogEntry*>> byIp;for(const auto&e:r.entries)if(e.status&&e.hasTimestamp)byIp[e.ip].push_back(&e);
+ std::vector<Alert> out;for(auto&p:byIp){auto& events=p.second;std::sort(events.begin(),events.end(),[](auto*a,auto*b){return a->timestamp<b->timestamp;});std::size_t left=0,auth=0,nf=0,srv=0,fail=0,maxAll=0,maxAuth=0,max404=0,max5xx=0,maxFail=0;std::string window;
+  for(std::size_t right=0;right<events.size();++right){if(events[right]->status>=400)++fail;if(events[right]->status==401||events[right]->status==403)++auth;if(events[right]->status==404)++nf;if(events[right]->status>=500)++srv;while(left<right&&events[right]->timestamp-events[left]->timestamp>std::chrono::minutes(c.windowMinutes)){if(events[left]->status>=400)--fail;if(events[left]->status==401||events[left]->status==403)--auth;if(events[left]->status==404)--nf;if(events[left]->status>=500)--srv;++left;}auto count=right-left+1;maxAll=std::max(maxAll,count);maxFail=std::max(maxFail,fail);maxAuth=std::max(maxAuth,auth);max404=std::max(max404,nf);max5xx=std::max(max5xx,srv);window=std::to_string(std::chrono::duration_cast<std::chrono::minutes>(events[right]->timestamp.time_since_epoch()).count());}
+  auto add=[&](std::string type,std::size_t n,std::size_t limit,std::string why,std::string sev){if(limit>0&&n>=limit)out.push_back({std::move(type),p.first,window,n,std::move(why),std::move(sev)});};add("repeated_auth_failures",maxAuth,c.authThreshold,"Repeated HTTP 401/403 responses within the configured time window; review authentication controls.","high");add("repeated_not_found",max404,c.notFoundThreshold,"Repeated HTTP 404 responses within the configured time window; may indicate broken links or probing.","medium");add("frequent_server_errors",max5xx,c.serverErrorThreshold,"Frequent HTTP 5xx responses within the configured time window.","medium");add("multiple_unsuccessful_requests",maxFail,c.unsuccessfulThreshold,"Multiple HTTP 4xx/5xx responses occurred within the configured time window.","medium");add("high_request_volume",maxAll,c.highVolumeThreshold,"Request volume exceeds the configured per-IP time-window threshold; this heuristic alone is not proof of abuse.","low");}
+ return out;
+}
+}

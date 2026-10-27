@@ -1,0 +1,8 @@
+/build/
+/reports/*
+!/reports/.gitkeep
+!/reports/sample_report.json
+!/reports/sample_report.csv
+/logs/generated.log
+__pycache__/
+*.pyc

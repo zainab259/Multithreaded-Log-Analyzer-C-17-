@@ -1,0 +1,14 @@
+{
+  "total": 8,
+  "valid": 7,
+  "invalid": 1,
+  "matched": 7,
+  "duration_seconds": 0,
+  "throughput_lines_per_second": 0,
+  "threads": 1,
+  "earliest": "2024-10-10 13:55:36 UTC",
+  "latest": "2024-10-10 13:59:10 UTC",
+  "severities": {"ERROR": 2, "INFO": 2, "WARNING": 3},
+  "status_classes": {"2xx": 1, "4xx": 3, "5xx": 1},
+  "alerts": []
+}
